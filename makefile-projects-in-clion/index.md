@@ -1,5 +1,17 @@
 ﻿# Как работать с `Makefile`-проектами в среде _CLion_
 
+## Содержание
+
+ * [Постановка задачи](#постановка-задачи)
+ * [Подходы к анализу проектной модели](#подходы-к-анализу-проектной-модели)
+ * [Выделение списка целей](#выделение-списка-целей)
+ * [Рекомендации](#рекомендации)
+
+Если вам лень вникать в скучные технические детали, можете перейти прямо к
+разделу "[Рекомендации](#рекомендации)".
+
+## Постановка задачи
+
 Основная проблема с проектами, использующими в качестве системы сборки _Make_,
 состоит в том, что эта система сборки не предоставляет ровным счётом никакой
 информации о проектной модели, т. е. о том, какие файлы исходного кода попадут
@@ -50,7 +62,7 @@ _Windows_. С другой стороны, `compiledb` анализирует и
 команды `make` и потому нередко совершает ошибки, но, с другой стороны,
 работает везде. Если вы используете _Linux_, я предлагаю вам остановить свой
 выбор именно на `bear`. По крайней мере, у вас не будет ошибок, связанных с
-неверной интрепретаций двойных кавычек, апострофов и путей, содержащих пробелы.
+неверной интерпретацией двойных кавычек, апострофов и путей, содержащих пробелы.
 
 Итак, мы собрали наш проект, "обернув" команду сборки и выполнив что-то вроде
 `bear make` или `bear make all`, и теперь имеем на выходе заветный
@@ -88,3 +100,94 @@ _Windows_. С другой стороны, `compiledb` анализирует и
 ### _BSD Make_
 
 ## Рекомендации
+
+Теперь, собственно, то, ради чего вся эта статья и была написана. Следование
+этим рекомендациям не даст стопроцентной гарантии, что ваш проект без ошибок
+откроется в CLion, но, во всяком случае, существенно снизит количество этих
+ошибок.
+
+ 1. Используйте [_GNU Make_](https://www.gnu.org/software/make/). Убедитесь,
+    что путь именно к этому инструменту выбран у вас в настройках. [_POSIX
+    Make_](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/make.html),
+    [_BSD Make_](https://www.crufty.net/help/sjg/bmake.html), [_Borland
+    Make_](http://docs.embarcadero.com/products/rad_studio/radstudio2007/RS2007_helpupdates/HUpdate4/EN/html/devwin32/make_xml.html)
+    и [_Microsoft NMake_](https://docs.microsoft.com/en-us/cpp/build/reference/nmake-reference)
+    пока не поддерживаются.
+
+ 1. Избегайте параллелизма на уровне процессов (`make -jN` при _N > 1_),
+    "зашитого" в `Makefile` через переопределение переменных `MFLAGS`,
+    `MAKEFLAGS` или `GNUMAKEFLAGS` (подробнее в [5.7.3 Communicating Options to
+    a Sub-`make`](https://www.gnu.org/software/make/manual/html_node/Options_002fRecursion.html)):
+
+    ```Makefile
+    MAKEFLAGS += j8
+
+    .PHONY: all
+    all: foo-all bar-all
+
+    .PHONY: foo-all
+    foo-all:
+    	$(MAKE) -C foo all
+
+    .PHONY: bar-all
+    bar-all:
+    	$(MAKE) -C bar all
+    ```
+
+    В таких условиях _Make_ будет использовать более одного (в примере выше
+    &mdash; 8) параллельного процесса при рекурсивных вызовах, в результате
+    чего в выводе команды сообщения вида "Entering directory '...'" и "Leaving
+    directory '...'" будут перемешаны между собой, команды компиляции &mdash;
+    произвольным образом разбросаны между этими сообщениями, и _CLion_ не
+    сможет отследить ни смену каталога, ни принадлежность команды тому или
+    иному каталогу:
+
+    ```
+    make: Entering directory '/home/alice'
+    make -C foo all
+    make -C bar all
+    make[1]: Entering directory '/home/alice/foo'
+    make[1]: Entering directory '/home/alice/bar'
+    echo "Making all in foo..."
+    make[1]: Leaving directory '/home/alice/foo'
+    echo "Making all in bar..."
+    make[1]: Leaving directory '/home/alice/bar'
+    make: Leaving directory '/home/alice'
+    ```
+
+ 1. Аналогичным образом, при рекурсивных вызовах _Make_, не переопределяйте
+    региональные настройки (`LC_*`, `LANG`, `LANGUAGE`). Дело в том, что
+    _CLion_, отслеживая сообщения о смене каталога, ожидает эти сообщения
+    именно на английском языке (и заботливо устанавливает нужное окружение для
+    родительского процесса _Make_). Вот что будет, если вмешается пользователь:
+
+    ```Makefile
+    export LC_ALL = ru_RU.UTF-8
+    export LANG = ru_RU.UTF-8
+
+    .PHONY: all
+    all: foo-all bar-all
+
+    .PHONY: foo-all
+    foo-all:
+    	$(MAKE) -C foo all
+
+    .PHONY: bar-all
+    bar-all:
+    	$(MAKE) -C bar all
+    ```
+
+    Вывод команды `make -wnk`:
+
+    ```
+    make: Entering directory '/home/alice'
+    make -C foo all
+    make[1]: вход в каталог «/home/alice/foo»
+    echo "Making all in foo..."
+    make[1]: выход из каталога «/home/alice/foo»
+    make -C bar all
+    make[1]: вход в каталог «/home/alice/bar»
+    echo "Making all in bar..."
+    make[1]: выход из каталога «/home/alice/bar»
+    make: Leaving directory '/home/alice'
+    ```
