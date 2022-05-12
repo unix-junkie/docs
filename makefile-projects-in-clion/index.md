@@ -103,7 +103,7 @@ _Windows_. С другой стороны, `compiledb` анализирует и
 
 Теперь, собственно, то, ради чего вся эта статья и была написана. Следование
 этим рекомендациям не даст стопроцентной гарантии, что ваш проект без ошибок
-откроется в CLion, но, во всяком случае, существенно снизит количество этих
+откроется в _CLion_, но, во всяком случае, существенно снизит количество этих
 ошибок.
 
  1. Убедитесь, что проект таки собирается (в том же окружении и тем же
@@ -121,6 +121,53 @@ _Windows_. С другой стороны, `compiledb` анализирует и
     Make_](http://docs.embarcadero.com/products/rad_studio/radstudio2007/RS2007_helpupdates/HUpdate4/EN/html/devwin32/make_xml.html)
     и [_Microsoft NMake_](https://docs.microsoft.com/en-us/cpp/build/reference/nmake-reference)
     пока не поддерживаются.
+
+ 1. Если ваш `Makefile` использует рекурсивные вызовы _Make_, в коде
+    [_рецепта_](https://www.gnu.org/software/make/manual/html_node/Recipes.html)
+    (т. е. интерпретируемого оболочкой набора команд для сборки цели) всегда
+    вызывайте
+    [`$(MAKE)`](https://www.gnu.org/software/make/manual/html_node/MAKE-Variable.html)
+    вместо `make`. Тому есть две причины.
+
+    Первая причина никак не связана собственно с _CLion_: у кого-то из
+    пользователей инструмент _Make_ может отсутствовать в переменной `PATH` или
+    быть установлен как `gmake` или `bmake`. Рекурсивно вызывая `$(MAKE)`, вы
+    можете быть уверены, что для родительского и дочернего процессов _Make_
+    будет использован один и тот же исполняемый файл (напр., `/usr/bin/make`),
+    т. е., скажем, _GNU Make_ никогда не породит _BSD Make_, и наоборот.
+
+    Во-вторых, в пресловутом режиме "dry run", используемом для анализа
+    проектной модели, первая форма записи будет распознана как рекурсивный
+    вызов с печатью соответствующих команд, а вторая &mdash; нет. Сравните эти
+    два вывода. `$(MAKE)`:
+
+    ```
+    make: Entering directory '/home/alice'
+    make -C foo all
+    make[1]: Entering directory '/home/alice/foo'
+    echo "Making all in foo..."
+    make[1]: Leaving directory '/home/alice/foo'
+    make -C bar all
+    make[1]: Entering directory '/home/alice/bar'
+    echo "Making all in bar..."
+    make[1]: Leaving directory '/home/alice/bar'
+    make: Leaving directory '/home/alice'
+    ```
+
+    `make`:
+
+    ```
+    make: Entering directory '/home/alice'
+    make -C foo all
+    make -C bar all
+    make: Leaving directory '/home/alice'
+    ```
+
+    Во втором случае, если в каком-то из дочерних (рекурсивно вызываемых)
+    `Makefile`'ов был столь нужный нам вызов компилятора, мы этого просто не
+    увидим. Кстати, ровно в этом нюансе состоит сложность реализации поддержки
+    средой _CLion_ инструмента _BSD Make_: `bmake -wnk` никогда не распознаёт
+    рекурсивные вызовы, независимо от формы записи.
 
  1. Избегайте параллелизма на уровне процессов (`make -jN` при _N > 1_),
     "зашитого" в `Makefile` через переопределение переменных `MFLAGS`,
@@ -162,6 +209,14 @@ _Windows_. С другой стороны, `compiledb` анализирует и
     make[1]: Leaving directory '/home/alice/bar'
     make: Leaving directory '/home/alice'
     ```
+
+    С учётом вышесказанного, если вы хотите иметь возвожность собирать проект,
+    используя несколько параллельных процессов _Make_, передайте флаг `-j`
+    через поле "_Build options_" в настройках проекта (но ни в коем случае не
+    через поле "Arguments" &mdash; флаги в этом поле используются для анализа
+    проектной модели):
+
+    ![](clion-makefile-multiple-jobs.png)
 
  1. Аналогичным образом, при рекурсивных вызовах _Make_, не переопределяйте
     региональные настройки (`LC_*`, `LANG`, `LANGUAGE`) внутри ваших
