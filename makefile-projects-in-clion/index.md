@@ -136,23 +136,26 @@ _Windows_. С другой стороны, `compiledb` анализирует и
 именно "dry run", как в англоязычной документации. Вот описание ключа командной
 строки _GNU Make_:
 
->       -n, --just-print, --dry-run, --recon
->            Print the commands that would be executed, but do not execute them
->            (except in certain circumstances).
+> **-n, --just-print, --dry-run, --recon**
+>
+> Print the commands that would be executed, but do not execute them
+> (except in certain circumstances).
 
 Помимо этого флага, нам ещё понадобится флаг `w`:
 
->       -w, --print-directory
->            Print  a message containing the working directory before and after
->            other processing.  This may be useful  for  tracking  down  errors
->            from complicated nests of recursive make commands.
+> **-w, --print-directory**
+>
+> Print  a message containing the working directory before and after
+> other processing.  This may be useful  for  tracking  down  errors
+> from complicated nests of recursive make commands.
 
 и флаг `k`:
 
->       -k, --keep-going
->            Continue  as  much  as  possible after an error.  While the target
->            that failed, and those that depend on it, cannot  be  remade,  the
->            other dependencies of these targets can be processed all the same.
+> **-k, --keep-going**
+>
+> Continue  as  much  as  possible after an error.  While the target
+> that failed, and those that depend on it, cannot  be  remade,  the
+> other dependencies of these targets can be processed all the same.
 
 Полная командная строка, таким образом, будет `make -wnk`, и вывод команды
 _Make_ в большинстве случаев позволяет нам проанализировать структуру проекта.
@@ -286,6 +289,33 @@ _Make_ в большинстве случаев позволяет нам про
     foo.o: foo.c
     	$(CC) -c -o $@ $<
     ```
+
+ 1. Поскольку флаги `w`, `n` и `k` являются принципиально важными для
+    корректного анализа проектной модели, не меняйте значений этих флагов
+    посредством `MFLAGS`, `MAKEFLAGS` или `GNUMAKEFLAGS`. Плохой пример,
+    выключение флага `w`:
+
+    ```Makefile
+    GNUMAKEFLAGS += --no-print-directory
+    ```
+
+    Если вы работаете с "чужим" проектом, куда у вас нет прав на запись
+    (хорошим примером является проект
+    [Node.js](https://github.com/nodejs/node/commit/ad7b98baa84172d1c6de1ed0a06be6aad9f6f3db)),
+    и не хотите менять файлы, находящиеся под контролем системы VCS, можно для
+    фазы анализа включить флаг `e`:
+
+    > **-e, --environment-overrides**
+    >
+    > Give variables taken from the environment  precedence over variables from makefiles.
+
+    Вот так, например, могут выглядеть настройки проекта для Node.js:
+
+    ![](clion-makefile-node.js.png)
+
+    Включение флага `e` через поле "_Arguments_" может быть альтернативным
+    решением и в иных случаях, когда на уровне `Makefile` переопределены флаги
+    _Make_ или другие стандартные переменные окружения (см. ниже).
 
  1. Избегайте параллелизма на уровне процессов (`make -jN` при _N > 1_),
     "зашитого" в `Makefile` через переопределение переменных `MFLAGS`,
