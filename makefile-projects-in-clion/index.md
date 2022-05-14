@@ -228,7 +228,7 @@ _Make_ в большинстве случаев позволяет нам про
 
     А теперь сравним два варианта вывода _Make_. Первый, через `$(MAKE)`:
 
-    ```
+    ```console
     make: Entering directory '/home/alice'
     make -C foo all
     make[1]: Entering directory '/home/alice/foo'
@@ -245,7 +245,7 @@ _Make_ в большинстве случаев позволяет нам про
 
     А теперь `make`:
 
-    ```
+    ```console
     make: Entering directory '/home/alice'
     make -C foo all
     make -C bar all
@@ -264,6 +264,16 @@ _Make_ в большинстве случаев позволяет нам про
     системный вызов `execve()` (тоже с флагом `-n`, разумеется), а вот _BSD
     Make_ &mdash; как раз нет (разница легко обнаруживается при запуске утилиты
     `strace` с ключом `-f`).
+
+    ```console
+    $ strace -f -e execve make -wnk 2>&1 >/dev/null | grep -vF ENOENT | grep -F execve
+    execve("/usr/bin/make", ["make", "-wnk"], 0x7ffe8a5a35a0 /* 80 vars */) = 0
+    [pid 15729] execve("/usr/bin/make", ["make", "-C", "foo", "all"], 0x5608f4544a30 /* 84 vars */) = 0
+    [pid 15730] execve("/usr/bin/make", ["make", "-C", "bar", "all"], 0x5608f4544a30 /* 84 vars */) = 0
+
+    $ strace -f -e execve bmake -wnk 2>&1 >/dev/null | grep -vF ENOENT | grep -F execve
+    execve("/usr/bin/bmake", ["bmake", "-wnk"], 0x7ffc10221bb0 /* 80 vars */) = 0
+    ```
 
  1. Не "зашивайте" в ваш `Makefile` короткое имя компилятора или полный путь к
     нему, как, напр., `gcc` или `/usr/bin/clang++`. Вместо этого используйте
@@ -345,7 +355,7 @@ _Make_ в большинстве случаев позволяет нам про
     сможет отследить ни смену каталога, ни принадлежность команды тому или
     иному каталогу:
 
-    ```
+    ```console
     make: Entering directory '/home/alice'
     make -C foo all
     make -C bar all
@@ -391,7 +401,7 @@ _Make_ в большинстве случаев позволяет нам про
 
     Вывод команды `make -wnk`:
 
-    ```
+    ```console
     make: Entering directory '/home/alice'
     make -C foo all
     make[1]: вход в каталог «/home/alice/foo»
