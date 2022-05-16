@@ -185,9 +185,58 @@ _Make_ в большинстве случаев позволяет нам про
 
 ## Выделение списка целей
 
+Помимо анализа проектной модели, _CLion_ умеет собирать информацию о том, какие
+_цели_ объявлены в `Makefile`. Каждая выявленная цель автоматически становится
+конфигурацией типа [_Makefile
+Application_](https://www.jetbrains.com/help/clion/run-debug-configuration-makefile-application.html):
+
+![](clion-makefile-application.png)
+
 ### _GNU Make_
 
+Для _GNU Make_ информация о целях собирается так же, как это сделано в
+соответствующем сценарии из проекта
+[bash-completion](https://github.com/scop/bash-completion/blob/master/completions/make),
+достаточно воспользоваться флагом `p`:
+
+> **-p, --print-data-base**
+>
+> Print the data base (rules and variable values) that results from reading the
+> makefiles; then execute as usual or as otherwise specified. This also prints
+> the version information given by the `-v` switch. To print the data base
+> without trying to remake any files, use `make -p -f/dev/null`.
+
+и выполнить `make -npq`.
+
 ### _BSD Make_
+
+Здесь нужен другой подход: _BSD Make_ ничего не знает о флаге `p`, это
+расширение GNU.
+
+В настоящее время _CLion_ не поддерживает _BSD Make_, но, чисто теоретически,
+"научить" работать с целями _BSD Make_ достаточно просто, используя (опять же,
+нестандартный) флаг `V`:
+
+> **-V variable**
+>
+> Print `bmake`'s idea of the value of _variable_, in the global context.  Do
+> not build any targets.  Multiple instances of this option may be specified;
+> the variables will be printed one per line, with a blank line for each null
+> or undefined variable.  If _variable_ contains a ‘$’ then the value will be
+> expanded before printing.
+
+Таким образом, список целей можно легко получить, выполнив команду
+
+```console
+bmake V '$(.ALLTARGETS)'
+```
+
+Если хочется исключить из этого списка синтетические "псевдоцели" (`.WAIT`),
+команду надо привести к следующему виду:
+
+```console
+bmake -V '$(.ALLTARGETS:N.WAIT_*:O)'
+```
 
 ## Рекомендации
 
