@@ -228,7 +228,7 @@ Application_](https://www.jetbrains.com/help/clion/run-debug-configuration-makef
 Таким образом, список целей можно легко получить, выполнив команду
 
 ```console
-bmake V '$(.ALLTARGETS)'
+bmake -V '$(.ALLTARGETS)'
 ```
 
 Если хочется исключить из этого списка синтетические "псевдоцели" (`.WAIT`),
