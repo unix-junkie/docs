@@ -3,35 +3,117 @@
 :toc:
 
 |===
-| Tool | Debian Packages | Written in | Storage
+| Tool | Debian Packages | Written in | Stars | Storage | Web Server | Comments
 
-| https://github.com/oetiker/mrtg[MRTG]
+| https://oss.oetiker.ch/mrtg/[MRTG]
 | standard
 | Perl
+| https://github.com/oetiker/mrtg[218]
+| RRDTool
+| External (Apache)
 |
 
-| https://github.com/Cacti/cacti[Cacti]
+| https://www.cacti.net[Cacti]
 | standard
 | PHP
-|
-
-| https://www.opennms.com[OpenNMS]
-| https://vault.opennms.com/docs/opennms/releases/24.1.3/guide-install/guide-install.html#_installing_on_debian[external]
-| Java
-| JRobin or RRDTool (via https://github.com/OpenNMS/jrrd2[jrrd2]) or Newts
+| https://github.com/Cacti/cacti[1.5k]
+| RRDTool, MySQL
+| External (Apache)
+| Debian package can automatically integrate with `apache2` or `lighttpd`
+  (the installer automatically creates `/etc/apache2/conf-available/cacti.conf`).
+  At the same time, _Cacti_ can't proceed w/o a _MySQL_ database, and database
+  connection needs to be configured manually, via
+  `/usr/share/cacti/site/include/config.php`.
 
 | https://www.monitorix.org[Monitorix]
 | standard
 | Perl
+| https://github.com/mikaku/Monitorix[1.1k]
 | RRDTool
+| Built-in (`monitorix-httpd` listening on port 8080)
+| Simple to set up and run. Few dependencies. Plenty of metrics available by
+  default.
 
-| Icinga
+| https://icinga.com[Icinga]
+| standard or https://icinga.com/docs/icinga-2/latest/doc/02-installation/01-Debian/[external]
+| C++
+| https://github.com/Icinga/icinga2[1.9k]
 |
 |
 |
 
-| https://www.zabbix.com[Zabbix] (https://github.com/zabbix/zabbix[source code])
+| https://www.zabbix.com[Zabbix]
 | standard or https://www.zabbix.com/download?os_distribution=debian[external]
 | C, Go, PHP
+| https://github.com/zabbix/zabbix[3.4k]
 |
+|
+|
+
+| https://prometheus.io[Prometheus]
+| https://packages.debian.org/bookworm/prometheus[standard]
+| Go
+| https://github.com/prometheus/prometheus[50.3k]
+|
+| Built-in
+| By default, listens at TCP port 9090, which may conflict with a _TeamCity
+  Agent_ or a https://min.io[_MinIO_] container, if both are running on the same
+  host.
+
+| https://www.opennms.com[OpenNMS]
+| https://vault.opennms.com/docs/opennms/releases/24.1.3/guide-install/guide-install.html#_installing_on_debian[external]
+| Java
+| https://github.com/OpenNMS/opennms[844]
+| JRobin or RRDTool (via https://github.com/OpenNMS/jrrd2[jrrd2]) or Newts
+|
+|
+
+| https://docs.sensu.io/sensu-go/latest/operations/deploy-sensu/install-sensu/[Sensu Go]
+| https://packagecloud.io/app/sensu/stable/search?dist=debian%2Fbullseye[external]
+| Go, previously Ruby
+| https://github.com/sensu/sensu-go[922]
+|
+|
+|
+
+| https://www.netdata.cloud[Netdata]
+| https://learn.netdata.cloud/docs/installing/native-linux-distribution-packages#manual-setup-of-deb-packages[external]
+| C
+| https://github.com/netdata/netdata[65.5k]
+|
+|
+|
+
+| https://grafana.com[Grafana]
+| https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/#install-from-apt-repository[external]
+| TypeScript, Go
+| https://github.com/grafana/grafana[57.6k]
+|
+|
+|
+
+| https://www.elastic.co/elasticsearch/[Elasticsearch]
+| https://www.elastic.co/guide/en/elasticsearch/reference/current/deb.html[external]
+| Java
+| https://github.com/elastic/elasticsearch[65.5k]
+|
+|
+|
+
+| https://openitcockpit.io[openITCOCKPIT]
+| https://openitcockpit.io/download_server/[external]
+| PHP
+| https://github.com/it-novum/openITCOCKPIT[229]
+|
+|
+|
+
+| https://pandorafms.com[Pandora FMS]
+| standard (agent only) and https://pandorafms.com/manual/!current/en/documentation/02_installation/01_installing[external] (server)
+| PHP
+| https://github.com/pandorafms/pandorafms[404]
+| MySQL
+|
+| Dozens of dependencies, installation script intended only for Ubuntu Linux and
+  can only be run as `root`.
 |===
