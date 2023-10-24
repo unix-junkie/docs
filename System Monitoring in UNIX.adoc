@@ -3,13 +3,16 @@
 :toc:
 
 |===
-| Tool | Debian Packages | Written in | Stars | Storage | Web Server | Comments
+| Tool | Debian Packages | Written in | Stars | Storage | SNMP | NRPE | Prometheus | Web Server | Comments
 
 | https://oss.oetiker.ch/mrtg/[MRTG]
 | standard
 | Perl
 | https://github.com/oetiker/mrtg[218]
 | RRDTool
+| Yes
+|
+|
 | External (Apache)
 |
 
@@ -18,18 +21,26 @@
 | PHP
 | https://github.com/Cacti/cacti[1.5k]
 | RRDTool, MySQL
+| Yes
+|
+|
 | External (Apache)
 | Debian package can automatically integrate with `apache2` or `lighttpd`
   (the installer automatically creates `/etc/apache2/conf-available/cacti.conf`).
   At the same time, _Cacti_ can't proceed w/o a _MySQL_ database, and database
   connection needs to be configured manually, via
-  `/usr/share/cacti/site/include/config.php`.
+  `/usr/share/cacti/site/include/config.php` (the `dbconfig-mysql` package generates `/etc/cacti/debian.php` and creates
+  a symlink, but the file needs to be revised afterwards). The default
+  administrator (`admin`) password is the same as the database password.
 
 | https://www.monitorix.org[Monitorix]
 | standard
 | Perl
 | https://github.com/mikaku/Monitorix[1.1k]
 | RRDTool
+| No
+| No
+| No
 | Built-in (`monitorix-httpd` listening on port 8080)
 | Simple to set up and run. Few dependencies. Plenty of metrics available by
   default.
@@ -39,39 +50,74 @@
 | C++
 | https://github.com/Icinga/icinga2[1.9k]
 |
+| Yes
+| Yes
+|
 |
 |
 
 | https://www.zabbix.com[Zabbix]
 | standard or https://www.zabbix.com/download?os_distribution=debian[external]
-| C, Go, PHP
+| C, Go, PHP (front-end)
 | https://github.com/zabbix/zabbix[3.4k]
+| MySQL or PostgreSQL (via ODBC)
+| Yes
 |
-|
-|
+| https://www.zabbix.com/documentation/6.4/en/manual/config/items/itemtypes/prometheus[Yes]
+| External (Apache, Nginx, or any other)
+| Can use either _MySQL_ or _PostgreSQL_ as a storage layer. Can monitor JVM
+  applications via JMX. Standard Debian packages have been
+  https://tracker.debian.org/pkg/zabbix[removed from testing]. The agent listens
+  at TCP port 10050 (either `zabbix-agent` (for SysV init) or `zabbix-agent2`
+  (for systemd) package should be used, but
+  https://www.zabbix.com/documentation/current/en/manual/appendix/agent_comparison[not both]).
+  The standard Debian package has outdated _Apache_ configuration: it contains
+  `php_value` definitions for either `mod_php5.c` or `mod_php7.c`, while the
+  current PHP version in Debian 12 is *8.2*, and we need either
+  `<IfModule mod_php.c>` or `<IfModule php_module>`. The database needs to be
+  manually created by running SQL scripts (`schema.sql`, then `images.sql`
+  followed by `data.sql`). The database collation should be set to either of
+  `utf8_bin`, `utf8mb3_bin`, or `utf8mb4_bin`. Also, when using _MariaDB_ (the
+  default _MySQL_ choice on Debian), `AllowUnsupportedDBVersions` should be set to *1*.
+  The default username is `Admin` with the password `zabbix`.
 
 | https://prometheus.io[Prometheus]
 | https://packages.debian.org/bookworm/prometheus[standard]
 | Go
 | https://github.com/prometheus/prometheus[50.3k]
 |
+| https://github.com/prometheus/snmp_exporter[Yes]
+|
+| https://prometheus.io/docs/instrumenting/exposition_formats/[Yes]
 | Built-in
 | By default, listens at TCP port 9090, which may conflict with a _TeamCity
   Agent_ or a https://min.io[_MinIO_] container, if both are running on the same
-  host.
+  host. Can monitor S.M.A.R.T attributes out of the box, using the
+  https://tracker.debian.org/pkg/prometheus-node-exporter-collectors[`prometheus-node-exporter-collectors`] package.
 
 | https://www.opennms.com[OpenNMS]
 | https://vault.opennms.com/docs/opennms/releases/24.1.3/guide-install/guide-install.html#_installing_on_debian[external]
 | Java
 | https://github.com/OpenNMS/opennms[844]
-| JRobin or RRDTool (via https://github.com/OpenNMS/jrrd2[jrrd2]) or Newts
-|
-|
+| JRobin or
+  https://vault.opennms.com/docs/opennms/releases/24.1.3/guide-install/guide-install.html#_rrdtool[RRDTool]
+  (via https://github.com/OpenNMS/jrrd2[jrrd2]) or Newts,
+  PostgreSQL (versions 10 to 15).
+| Yes
+| https://docs.opennms.com/horizon/31/reference/service-assurance/monitors/NrpeMonitor.html[Yes]
+| https://docs.opennms.com/horizon/30/reference/performance-data-collection/collectors/prometheus.html[Yes]
+| Built-in (_Jetty_), on port 8980
+| Painless installation.
+  https://vault.opennms.com/docs/opennms/releases/24.1.3/guide-admin/guide-admin.html[Administration Guide].
+  Can receive data from Nagios NRPE agents.
 
 | https://docs.sensu.io/sensu-go/latest/operations/deploy-sensu/install-sensu/[Sensu Go]
 | https://packagecloud.io/app/sensu/stable/search?dist=debian%2Fbullseye[external]
 | Go, previously Ruby
 | https://github.com/sensu/sensu-go[922]
+|
+|
+|
 |
 |
 |
@@ -83,11 +129,18 @@
 |
 |
 |
+|
+|
+|
 
 | https://grafana.com[Grafana]
 | https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/#install-from-apt-repository[external]
+  (version *9.5* can also be installed from _OpenNMS_ repository)
 | TypeScript, Go
 | https://github.com/grafana/grafana[57.6k]
+|
+|
+|
 |
 |
 |
@@ -99,11 +152,17 @@
 |
 |
 |
+|
+|
+|
 
 | https://openitcockpit.io[openITCOCKPIT]
 | https://openitcockpit.io/download_server/[external]
 | PHP
 | https://github.com/it-novum/openITCOCKPIT[229]
+|
+|
+|
 |
 |
 |
@@ -113,6 +172,9 @@
 | PHP
 | https://github.com/pandorafms/pandorafms[404]
 | MySQL
+|
+|
+|
 |
 | Dozens of dependencies, installation script intended only for Ubuntu Linux and
   can only be run as `root`.
