@@ -115,23 +115,26 @@
 | https://packagecloud.io/app/sensu/stable/search?dist=debian%2Fbullseye[external]
 | Go, previously Ruby
 | https://github.com/sensu/sensu-go[922]
+| PostgreSQL
 |
 |
 |
-|
-|
-|
+| Built-in, on port 3000
+| No initscripts, no config file templates (intended to run in a Docker container).
+  The default _PostgreSQL_ config file location in Debian 12 is `/etc/postgresql/15/main/pg_hba.conf`.
 
 | https://www.netdata.cloud[Netdata]
-| https://learn.netdata.cloud/docs/installing/native-linux-distribution-packages#manual-setup-of-deb-packages[external]
+| standard (*1.37.1*) or
+  https://learn.netdata.cloud/docs/installing/native-linux-distribution-packages#manual-setup-of-deb-packages[external] (*1.43.0*)
 | C
 | https://github.com/netdata/netdata[65.5k]
+| Only real-time data by default,
+  but multiple https://learn.netdata.cloud/docs/exporting[export destinations] may be configured.
+| https://www.netdata.cloud/integrations/snmp-devices/[Yes] (requires `netdata-plugin-go`)
 |
-|
-|
-|
-|
-|
+| https://www.netdata.cloud/integrations/prometheus-endpoint/[Yes]
+| External (Apache) or built-in
+| Plug-ins can be written in _Bash_ or _Python_.
 
 | https://grafana.com[Grafana]
 | https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/#install-from-apt-repository[external]
@@ -160,12 +163,15 @@
 | https://openitcockpit.io/download_server/[external]
 | PHP
 | https://github.com/it-novum/openITCOCKPIT[229]
+| RRDTool, Redis
 |
-|
-|
-|
-|
-|
+| https://docs.openitcockpit.io/en/beginners/monitoring-nrpe/[Yes]
+| https://docs.openitcockpit.io/en/monitoring/prometheus/[Yes]
+| External (Nginx)
+| Conflicts with _Apache_.
+  Automatically installs _Grafana_.
+  Pulls and starts images of https://pptr.dev[_Puppeteer_] and _Nodejs_.
+
 
 | https://pandorafms.com[Pandora FMS]
 | standard (agent only) and https://pandorafms.com/manual/!current/en/documentation/02_installation/01_installing[external] (server)
@@ -179,3 +185,21 @@
 | Dozens of dependencies, installation script intended only for Ubuntu Linux and
   can only be run as `root`.
 |===
+
+== Sample Apache configuration for Netdata
+
+[source,apacheconfig]
+----
+<IfModule mod_proxy.c>
+        ProxyRequests Off
+        ProxyPreserveHost On
+
+        ProxyPass /netdata http://127.0.0.1:19999 connectiontimeout=5 timeout=30 keepalive=on
+        ProxyPassReverse /netdata http://127.0.0.1:19999
+</IfModule>
+
+<IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteRule ^/netdata$ /netdata/ [L,R=301]
+</IfModule>
+----
